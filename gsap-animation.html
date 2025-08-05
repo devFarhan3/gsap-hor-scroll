@@ -59,15 +59,7 @@
             justify-content: center;
             padding: 0 50px;
             background-color: #f2f4f8;
-            z-index: 10;
-            transition: opacity 0.3s ease;
-        }
-
-        @media (max-width: 991.98px) {
-            .sticky-left {
-                width: 50%;
-                padding: 0 20px;
-            }
+            z-index: 999;
         }
 
         .scrollable-right-container {
@@ -81,13 +73,6 @@
             z-index: 11;
         }
 
-        @media (max-width: 991.98px) {
-            .scrollable-right-container {
-                width: 50%;
-                padding-left: 20px;
-            }
-        }
-
         .scroll-card {
             flex: 0 0 auto;
             width: 450px;
@@ -99,20 +84,6 @@
             flex-direction: column;
             justify-content: space-between;
             height: 400px;
-            /* box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); */
-        }
-
-        @media (max-width: 991.98px) {
-            .scroll-card {
-                width: 80vw;
-                height: 350px;
-                padding: 30px;
-                margin-right: 20px;
-            }
-        }
-
-        .scroll-card:last-child {
-            margin-right: 0;
         }
 
         h1,
@@ -193,14 +164,34 @@
             color: #6c757d;
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 991.98px) {
+            .horizontal-scroll-wrapper {
+                flex-direction: column;
+                height: auto;
+            }
+
             .sticky-left {
                 width: 100%;
-                padding: 0 20px;
+                height: auto;
+                padding: 50px 20px;
+            }
+
+            .scrollable-right-container {
+                width: 100%;
+                height: auto;
+                padding: 20px;
+                flex-wrap: nowrap;
             }
 
             .scroll-card {
-                height: 400px;
+                width: 85vw;
+                height: 350px;
+                padding: 30px;
+                margin-right: 15px;
+            }
+
+            .scroll-card:last-child {
+                margin-right: 20px;
             }
         }
     </style>
@@ -365,75 +356,75 @@
         gsap.registerPlugin(ScrollTrigger);
 
         document.addEventListener("DOMContentLoaded", () => {
-            const horizontalScrollWrapper = document.querySelector(
-                ".horizontal-scroll-wrapper"
-            );
-            const scrollableRightContainer = document.querySelector(
-                ".scrollable-right-container"
-            );
-            const stickyLeft = document.querySelector(".sticky-left");
-            const cards = gsap.utils.toArray(".scroll-card");
-            const numberOfCards = cards.length;
+            let mm = gsap.matchMedia();
 
-            let totalCardsContentWidth = 0;
-            cards.forEach((card) => {
-                totalCardsContentWidth +=
-                    card.offsetWidth + parseFloat(getComputedStyle(card).marginRight);
+            mm.add("(min-width: 992px)", () => {
+                const horizontalScrollWrapper = document.querySelector(".horizontal-scroll-wrapper");
+                const scrollableRightContainer = document.querySelector(".scrollable-right-container");
+                const cards = gsap.utils.toArray(".scroll-card");
+
+                let totalCardsContentWidth = 0;
+                cards.forEach((card) => {
+                    totalCardsContentWidth += card.offsetWidth + parseFloat(getComputedStyle(card).marginRight);
+                });
+
+                let xMovementForCards = totalCardsContentWidth - scrollableRightContainer.clientWidth;
+                xMovementForCards = Math.max(0, xMovementForCards);
+
+                const verticalScrollLength = xMovementForCards + 500;
+                let snapValue = cards.length > 1 ? 1 / (cards.length - 1) : 0;
+
+                const tl = gsap.timeline({
+                    scrollTrigger: {
+                        trigger: horizontalScrollWrapper,
+                        pin: true,
+                        start: "top top",
+                        end: `+=${verticalScrollLength}`,
+                        scrub: 1,
+                        snap: snapValue,
+                        invalidateOnRefresh: true,
+                    },
+                });
+
+                tl.to(
+                    scrollableRightContainer, {
+                        x: -xMovementForCards,
+                        ease: "none",
+                    },
+                    0
+                );
             });
 
-            let effectiveScrollableAreaWidth = scrollableRightContainer.clientWidth;
-            let xMovementForCards =
-                totalCardsContentWidth - effectiveScrollableAreaWidth;
-            xMovementForCards = Math.max(0, xMovementForCards);
+            mm.add("(max-width: 991.98px)", () => {
+                const horizontalScrollWrapper = document.querySelector(".horizontal-scroll-wrapper");
+                const scrollableRightContainer = document.querySelector(".scrollable-right-container");
+                const cards = gsap.utils.toArray(".scroll-card");
 
-            const rightPadding =
-                horizontalScrollWrapper.offsetWidth * 0.5 -
-                cards[cards.length - 1].offsetWidth;
-            const verticalScrollLength =
-                xMovementForCards + stickyLeft.offsetWidth + rightPadding;
+                let totalCardsContentWidth = 0;
+                cards.forEach((card) => {
+                    totalCardsContentWidth += card.offsetWidth + parseFloat(getComputedStyle(card).marginRight);
+                });
+                totalCardsContentWidth += parseFloat(getComputedStyle(scrollableRightContainer).paddingLeft);
 
-            let snapValue = 0;
-            if (numberOfCards > 1) {
-                snapValue = 1 / (numberOfCards - 1);
-            }
+                const containerWidth = scrollableRightContainer.clientWidth;
+                const xMovementForCards = totalCardsContentWidth - containerWidth;
 
-            const tl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: horizontalScrollWrapper,
-                    pin: true,
-                    start: "top top",
-                    end: `+=${verticalScrollLength}`,
-                    scrub: 1,
-                    snap: snapValue,
-                    invalidateOnRefresh: true,
-                },
-            });
+                const verticalScrollLength = xMovementForCards + 1000;
 
-            tl.to(
-                scrollableRightContainer,
-                {
+                gsap.to(scrollableRightContainer, {
                     x: -xMovementForCards,
                     ease: "none",
-                },
-                0
-            );
-
-            tl.to(
-                stickyLeft,
-                {
-                    opacity: 0,
-                    x: -stickyLeft.offsetWidth,
-                    ease: "power1.out",
-                },
-                0
-            ).set(
-                stickyLeft,
-                {
-                    visibility: "hidden",
-                    pointerEvents: "none",
-                },
-                0.5
-            );
+                    scrollTrigger: {
+                        trigger: horizontalScrollWrapper,
+                        pin: true,
+                        start: "top top",
+                        end: `+=${verticalScrollLength}`,
+                        scrub: 1,
+                        snap: cards.length > 1 ? 1 / (cards.length - 1) : 0,
+                        invalidateOnRefresh: true,
+                    },
+                });
+            });
         });
     </script>
 </body>
